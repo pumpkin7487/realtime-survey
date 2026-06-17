@@ -59,17 +59,9 @@ function init() {
   }
 
   // Set up visual UI triggers for option checkboxes
-  optionCards.forEach(card => {
-    const cb = card.querySelector('input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    const card = cb.closest('.option-card');
     
-    // Clicking the card toggles the checkbox
-    card.addEventListener('click', (e) => {
-      // Prevent double trigger when clicking the label wrapper
-      if (e.target.tagName === 'INPUT') return;
-      cb.checked = !cb.checked;
-      toggleCardStyle(card, cb.checked);
-    });
-
     cb.addEventListener('change', () => {
       toggleCardStyle(card, cb.checked);
     });
@@ -183,6 +175,12 @@ async function handleVoteSubmit(e) {
       selectedChoices.push(cb.value);
     }
   });
+
+  // Validation: Must select 1 to 7 items
+  if (selectedChoices.length === 0) {
+    alert('請至少選擇 1 個 AI 平臺進行提交！(最多可選 7 個項目)');
+    return;
+  }
 
   // Lock UI during submit
   submitBtn.disabled = true;

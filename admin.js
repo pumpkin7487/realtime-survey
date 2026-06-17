@@ -221,7 +221,7 @@ function updateUI() {
 
     // Count display text
     const cntEl = document.getElementById(`cnt-${idSuffix}`);
-    if (cntEl) cntEl.textContent = `(${count} 票)`;
+    if (cntEl) cntEl.textContent = `(${count} 人)`;
 
     // Animating the progress bar
     const barEl = document.getElementById(`bar-${idSuffix}`);
@@ -254,6 +254,15 @@ function copyVoterUrl() {
 
 // Confirm and Reset Poll
 async function confirmReset() {
+  const password = prompt('請輸入重置密碼：');
+  if (password === null) {
+    return; // Cancelled
+  }
+  if (password !== '0515') {
+    alert('密碼錯誤，拒絕重置！');
+    return;
+  }
+
   if (!confirm('確定要清空所有的投票數據嗎？此操作無法還原。')) {
     return;
   }
