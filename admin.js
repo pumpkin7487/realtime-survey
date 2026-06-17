@@ -68,8 +68,18 @@ async function init() {
   }
 
   // Setup Dynamic QR Code & Voter Url
-  const currentUrl = window.location.href;
-  const voterUrl = currentUrl.replace(/index\.html.*/, '') + 'vote.html?room=' + room;
+  const url = new URL(window.location.href);
+  let path = url.pathname;
+  if (path.endsWith('index.html')) {
+    path = path.slice(0, -'index.html'.length);
+  }
+  if (!path.endsWith('/')) {
+    path += '/';
+  }
+  url.pathname = path + 'vote.html';
+  url.search = `?room=${room}`;
+  const voterUrl = url.toString();
+  
   voterUrlInput.value = voterUrl;
   qrCodeEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(voterUrl)}`;
 
