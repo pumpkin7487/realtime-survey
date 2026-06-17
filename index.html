@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>即時調查統計面板 - AI 平臺使用調查</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- MQTT.js for Real-time WebSocket connection -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+  
+  <header>
+    <div class="title-badge">Live Survey</div>
+    <h1>即時 AI 平臺使用調查</h1>
+    <p class="subtitle">請使用手機掃描右側 QR Code，點選您曾經使用過的 AI 服務平臺。</p>
+  </header>
+
+  <main>
+    <!-- Left Panel: Live Poll Results -->
+    <section class="card poll-results-container">
+      <div class="poll-header">
+        <h2>調查結果統計</h2>
+        <div class="poll-stats">
+          <div class="stat-item">
+            <span class="stat-label">已投票人數</span>
+            <span id="total-voters" class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">總票數</span>
+            <span id="total-votes" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-list">
+        <!-- ChatGPT -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-chatgpt"></span>
+              1. ChatGPT
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-chatgpt">0%</span>
+              <span id="cnt-chatgpt" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-chatgpt" class="progress-bar bar-chatgpt"></div>
+          </div>
+        </div>
+
+        <!-- Gemini -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-gemini"></span>
+              2. Gemini
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-gemini">0%</span>
+              <span id="cnt-gemini" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-gemini" class="progress-bar bar-gemini"></div>
+          </div>
+        </div>
+
+        <!-- NotebookLM -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-notebooklm"></span>
+              3. NotebookLM
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-notebooklm">0%</span>
+              <span id="cnt-notebooklm" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-notebooklm" class="progress-bar bar-notebooklm"></div>
+          </div>
+        </div>
+
+        <!-- Claude -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-claude"></span>
+              4. Claude
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-claude">0%</span>
+              <span id="cnt-claude" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-claude" class="progress-bar bar-claude"></div>
+          </div>
+        </div>
+
+        <!-- Typeless -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-typeless"></span>
+              5. Typeless
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-typeless">0%</span>
+              <span id="cnt-typeless" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-typeless" class="progress-bar bar-typeless"></div>
+          </div>
+        </div>
+
+        <!-- Codex -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-codex"></span>
+              6. Codex
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-codex">0%</span>
+              <span id="cnt-codex" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-codex" class="progress-bar bar-codex"></div>
+          </div>
+        </div>
+
+        <!-- Antigravity -->
+        <div class="chart-item">
+          <div class="chart-info">
+            <span class="brand-name">
+              <span class="brand-dot dot-antigravity"></span>
+              7. Antigravity
+            </span>
+            <span class="vote-percentage">
+              <span id="pct-antigravity">0%</span>
+              <span id="cnt-antigravity" class="vote-count">(0 票)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div id="bar-antigravity" class="progress-bar bar-antigravity"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Side Controls and QR Code -->
+    <div class="side-panel">
+      <!-- QR Code Card -->
+      <section class="card qr-card">
+        <h3>掃描手機投票</h3>
+        <p>打開相機掃描 QR Code 進入投票網頁</p>
+        <div class="qr-code-wrapper">
+          <img id="qr-code" src="" alt="投票頁面 QR Code">
+        </div>
+        <p style="margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">手動存取網址：</p>
+        <div class="room-link-container">
+          <input type="text" id="voter-url-input" class="room-url-input" readonly>
+          <button id="copy-url-btn" class="btn btn-secondary">複製</button>
+        </div>
+      </section>
+
+      <!-- Control Panel -->
+      <section class="card control-card">
+        <div class="control-title">
+          <span>控制面板</span>
+        </div>
+        <div class="status-indicator">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-text">連線中...</span>
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--glass-border); margin: 0.5rem 0;">
+        <button id="reset-btn" class="btn btn-danger">重置所有投票數據</button>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>即時調查系統 © 2026 | Powered by <a href="https://github.com/pumpkin7487/realtime-survey" target="_blank">Antigravity</a></p>
+  </footer>
+
+  <script src="admin.js"></script>
+</body>
+</html>

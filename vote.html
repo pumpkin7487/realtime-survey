@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>點選使用過的 AI 平臺 - 投票頁面</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- MQTT.js for Real-time WebSockets -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+  
+  <div class="voter-container">
+    
+    <!-- Voting Form Card -->
+    <section id="voting-card" class="card voter-card">
+      <div class="voter-header">
+        <div class="title-badge">AI Survey</div>
+        <h2>你用過哪些 AI 平臺？</h2>
+        <p>（可複選，請點選您有使用過的平臺，然後點擊提交）</p>
+      </div>
+
+      <form id="survey-form">
+        <div class="vote-options-grid">
+          <!-- ChatGPT -->
+          <label class="option-card" id="label-chatgpt">
+            <div class="option-left">
+              <span class="brand-dot dot-chatgpt"></span>
+              <span class="option-name">1. ChatGPT</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="ChatGPT">
+          </label>
+
+          <!-- Gemini -->
+          <label class="option-card" id="label-gemini">
+            <div class="option-left">
+              <span class="brand-dot dot-gemini"></span>
+              <span class="option-name">2. Gemini</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="Gemini">
+          </label>
+
+          <!-- NotebookLM -->
+          <label class="option-card" id="label-notebooklm">
+            <div class="option-left">
+              <span class="brand-dot dot-notebooklm"></span>
+              <span class="option-name">3. NotebookLM</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="NotebookLM">
+          </label>
+
+          <!-- Claude -->
+          <label class="option-card" id="label-claude">
+            <div class="option-left">
+              <span class="brand-dot dot-claude"></span>
+              <span class="option-name">4. Claude</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="Claude">
+          </label>
+
+          <!-- Typeless -->
+          <label class="option-card" id="label-typeless">
+            <div class="option-left">
+              <span class="brand-dot dot-typeless"></span>
+              <span class="option-name">5. Typeless</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="Typeless">
+          </label>
+
+          <!-- Codex -->
+          <label class="option-card" id="label-codex">
+            <div class="option-left">
+              <span class="brand-dot dot-codex"></span>
+              <span class="option-name">6. Codex</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="Codex">
+          </label>
+
+          <!-- Antigravity -->
+          <label class="option-card" id="label-antigravity">
+            <div class="option-left">
+              <span class="brand-dot dot-antigravity"></span>
+              <span class="option-name">7. Antigravity</span>
+            </div>
+            <div class="checkbox-custom"></div>
+            <input type="checkbox" name="platform" value="Antigravity">
+          </label>
+        </div>
+
+        <div class="voter-actions">
+          <button type="submit" id="submit-btn" class="btn btn-primary">提交投票</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Success Feedback Card -->
+    <section id="success-card" class="card success-card">
+      <div class="success-icon">✓</div>
+      <h3 class="success-title">投票提交成功！</h3>
+      <p class="success-text">您的選項已成功送出，主螢幕的圖表將會即時更新。謝謝您的參與！</p>
+      
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">您所選擇的平臺：</p>
+      <div id="voted-badges" class="selected-badge-list">
+        <!-- Badges injected by JS -->
+      </div>
+      
+      <button id="edit-vote-btn" class="btn btn-secondary" style="width: 100%; border-radius: 12px; padding: 1rem;">修改投票內容</button>
+    </section>
+
+  </div>
+
+  <footer>
+    <p>即時調查系統 © 2026 | Powered by <a href="https://github.com/pumpkin7487/realtime-survey" target="_blank">Antigravity</a></p>
+  </footer>
+
+  <script src="voter.js"></script>
+</body>
+</html>
