@@ -146,52 +146,65 @@ async function fetchLatestVotes() {
 
 // Connect to EMQX Public Broker over WebSockets
 function connectMQTT() {
-  const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
-  const options = {
-    clientId: 'ai_survey_dashboard_' + Math.random().toString(16).substring(2, 8),
-    clean: true,
-    connectTimeout: 5000,
-    reconnectPeriod: 3000
-  };
+  if (typeof mqtt === 'undefined') {
+    console.warn('MQTT library not loaded. Running in HTTP fallback mode.');
+    statusDotEl.classList.remove('active');
+    statusTextEl.textContent = '即時同步不可用 (已啟用自動輪詢備用機制)';
+    return;
+  }
 
-  statusTextEl.textContent = '連線至即時伺服器...';
-  
-  mqttClient = mqtt.connect(brokerUrl, options);
+  try {
+    const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+    const options = {
+      clientId: 'ai_survey_dashboard_' + Math.random().toString(16).substring(2, 8),
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 3000
+    };
 
-  mqttClient.on('connect', () => {
-    console.log('Connected to MQTT Broker.');
-    statusDotEl.classList.add('active');
-    statusTextEl.textContent = '即時連線中 (穩定)';
-    mqttClient.subscribe(`ai-survey/${room}/vote`);
-  });
+    statusTextEl.textContent = '連線至即時伺服器...';
+    
+    mqttClient = mqtt.connect(brokerUrl, options);
 
-  mqttClient.on('message', (topic, message) => {
-    try {
-      const payload = JSON.parse(message.toString());
-      if (payload.type === 'vote' && payload.voterId && Array.isArray(payload.choices)) {
-        // Update local state
-        votesState[payload.voterId] = payload.choices;
-        updateUI();
-      } else if (payload.type === 'reset') {
-        votesState = {};
-        updateUI();
+    mqttClient.on('connect', () => {
+      console.log('Connected to MQTT Broker.');
+      statusDotEl.classList.add('active');
+      statusTextEl.textContent = '即時連線中 (穩定)';
+      mqttClient.subscribe(`ai-survey/${room}/vote`);
+    });
+
+    mqttClient.on('message', (topic, message) => {
+      try {
+        const payload = JSON.parse(message.toString());
+        if (payload.type === 'vote' && payload.voterId && Array.isArray(payload.choices)) {
+          // Update local state
+          votesState[payload.voterId] = payload.choices;
+          updateUI();
+        } else if (payload.type === 'reset') {
+          votesState = {};
+          updateUI();
+        }
+      } catch (e) {
+        console.error('Error handling incoming MQTT message:', e);
       }
-    } catch (e) {
-      console.error('Error handling incoming MQTT message:', e);
-    }
-  });
+    });
 
-  mqttClient.on('error', (err) => {
-    console.error('MQTT connection error:', err);
-    statusDotEl.classList.remove('active');
-    statusTextEl.textContent = '連線出錯 (已切換至備用同步模式)';
-  });
+    mqttClient.on('error', (err) => {
+      console.error('MQTT connection error:', err);
+      statusDotEl.classList.remove('active');
+      statusTextEl.textContent = '連線出錯 (已切換至備用同步模式)';
+    });
 
-  mqttClient.on('close', () => {
-    console.log('MQTT connection closed.');
+    mqttClient.on('close', () => {
+      console.log('MQTT connection closed.');
+      statusDotEl.classList.remove('active');
+      statusTextEl.textContent = '連線中斷 (備用同步模式已啟用)';
+    });
+  } catch (err) {
+    console.error('Error initializing MQTT connection:', err);
     statusDotEl.classList.remove('active');
-    statusTextEl.textContent = '連線中斷 (備用同步模式已啟用)';
-  });
+    statusTextEl.textContent = '連線初始化失敗 (已啟用輪詢模式)';
+  }
 }
 
 // Update the statistics and progress bars on the page
@@ -299,8 +312,12 @@ async function confirmReset() {
   }
 
   // Broadcast reset event via MQTT
-  if (mqttClient && mqttClient.connected) {
-    mqttClient.publish(`ai-survey/${room}/vote`, JSON.stringify({ type: 'reset' }), { retain: false });
+  if (typeof mqtt !== 'undefined' && mqttClient && mqttClient.connected) {
+    try {
+      mqttClient.publish(`ai-survey/${room}/vote`, JSON.stringify({ type: 'reset' }), { retain: false });
+    } catch (e) {
+      console.error('MQTT publish reset failed:', e);
+    }
   }
 }
 

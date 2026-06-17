@@ -70,9 +70,14 @@ function init() {
   // Handle previous vote loading
   const savedVote = localStorage.getItem(`survey_voted_${room}`);
   if (savedVote) {
-    const choices = JSON.parse(savedVote);
-    applyChoicesToForm(choices);
-    showSuccessScreen(choices);
+    try {
+      const choices = JSON.parse(savedVote);
+      applyChoicesToForm(choices);
+      showSuccessScreen(choices);
+    } catch (e) {
+      console.error('Error parsing saved vote JSON:', e);
+      localStorage.removeItem(`survey_voted_${room}`);
+    }
   }
 
   // Handle Form Submission
@@ -87,42 +92,51 @@ function init() {
 
 // Connect to EMQX Public Broker over WebSockets
 function connectMQTT() {
-  const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
-  const options = {
-    clientId: 'ai_survey_voter_' + Math.random().toString(16).substring(2, 8),
-    clean: true,
-    connectTimeout: 5000,
-    reconnectPeriod: 3000
-  };
+  if (typeof mqtt === 'undefined') {
+    console.warn('MQTT library is not loaded. Operating in HTTP database sync mode.');
+    return;
+  }
 
-  mqttClient = mqtt.connect(brokerUrl, options);
+  try {
+    const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+    const options = {
+      clientId: 'ai_survey_voter_' + Math.random().toString(16).substring(2, 8),
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 3000
+    };
 
-  mqttClient.on('connect', () => {
-    console.log('Connected to MQTT Broker.');
-    mqttClient.subscribe(`ai-survey/${room}/vote`);
-  });
+    mqttClient = mqtt.connect(brokerUrl, options);
 
-  mqttClient.on('message', (topic, message) => {
-    try {
-      const payload = JSON.parse(message.toString());
-      if (payload.type === 'reset') {
-        // Clear local storage vote state
-        localStorage.removeItem(`survey_voted_${room}`);
-        
-        // Reset checkboxes and card styling
-        checkboxes.forEach(cb => cb.checked = false);
-        optionCards.forEach(card => card.classList.remove('checked'));
-        
-        // Show the voting card, hide success card
-        successCard.style.display = 'none';
-        votingCard.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = '提交投票';
+    mqttClient.on('connect', () => {
+      console.log('Connected to MQTT Broker.');
+      mqttClient.subscribe(`ai-survey/${room}/vote`);
+    });
+
+    mqttClient.on('message', (topic, message) => {
+      try {
+        const payload = JSON.parse(message.toString());
+        if (payload.type === 'reset') {
+          // Clear local storage vote state
+          localStorage.removeItem(`survey_voted_${room}`);
+          
+          // Reset checkboxes and card styling
+          checkboxes.forEach(cb => cb.checked = false);
+          optionCards.forEach(card => card.classList.remove('checked'));
+          
+          // Show the voting card, hide success card
+          successCard.style.display = 'none';
+          votingCard.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = '提交投票';
+        }
+      } catch (e) {
+        console.error('Error handling MQTT reset message:', e);
       }
-    } catch (e) {
-      console.error('Error handling MQTT reset message:', e);
-    }
-  });
+    });
+  } catch (err) {
+    console.error('Error initializing MQTT connection:', err);
+  }
 }
 
 function toggleCardStyle(card, isChecked) {
@@ -220,12 +234,16 @@ async function handleVoteSubmit(e) {
   }
 
   // 2. Publish live event via MQTT
-  if (mqttClient && mqttClient.connected) {
-    mqttClient.publish(`ai-survey/${room}/vote`, JSON.stringify({
-      type: 'vote',
-      voterId: voterId,
-      choices: selectedChoices
-    }));
+  if (typeof mqtt !== 'undefined' && mqttClient && mqttClient.connected) {
+    try {
+      mqttClient.publish(`ai-survey/${room}/vote`, JSON.stringify({
+        type: 'vote',
+        voterId: voterId,
+        choices: selectedChoices
+      }));
+    } catch (e) {
+      console.error('MQTT publish error:', e);
+    }
   }
 
   // 3. Save state in LocalStorage
